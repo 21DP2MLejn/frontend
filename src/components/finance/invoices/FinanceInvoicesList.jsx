@@ -1,9 +1,10 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { useMutation } from "@apollo/client"
 import { v4 } from "uuid"
 import { withTranslation } from 'react-i18next'
 import { withRouter } from "react-router"
 import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 import {
   Icon,
@@ -15,7 +16,7 @@ import {
 import AppSettingsContext from '../../context/AppSettingsContext'
 import { get_list_query_variables } from "./tools"
 import FinanceInvoicesStatus from "../../ui/FinanceInvoiceStatus"
-import { GET_INVOICES_QUERY, DELETE_FINANCE_INVOICE } from "./queries"
+import { GET_INVOICES_QUERY, DELETE_FINANCE_INVOICE, SEND_INVOICE_REMINDERS } from "./queries"
 import { TOKEN_REFRESH } from "../../../queries/system/auth"
 import { refreshTokenAndOpenExportLinkInNewTab } from "../../../tools/refresh_token_and_open_export_link"
 import confirm_delete from "../../../tools/confirm_delete"
@@ -33,10 +34,80 @@ function FinanceInvoicesList({
   const dateFormat = appSettings.dateFormat
 
   const [doTokenRefresh] = useMutation(TOKEN_REFRESH)
-  const [ deleteFinanceInvoice ] = useMutation(DELETE_FINANCE_INVOICE)
+  const [deleteFinanceInvoice] = useMutation(DELETE_FINANCE_INVOICE)
+  const [sendInvoiceReminders, { loading: sendingReminders }] = useMutation(SEND_INVOICE_REMINDERS)
+  const [remindersSent, setRemindersSent] = useState(false)
+
+  // Check if there are any overdue invoices
+  const hasOverdueInvoices = invoices.edges.some(({ node }) => 
+    node.status === "OVERDUE"
+  )
+
+  // Function to send reminders for overdue invoices
+  const handleSendReminders = () => {
+    // Show loading toast
+    const loadingToastId = toast.info(t('general.please_wait'), { autoClose: false })
+    
+    sendInvoiceReminders()
+    .then(({ data }) => {
+      // Close loading toast
+      toast.dismiss(loadingToastId)
+      
+      const result = data.sendInvoiceReminders.result;
+      if (result.success) {
+        setRemindersSent(true)
+        toast.success(
+          t('finance.invoices.reminders_sent', 
+            {count: result.count}
+          )
+        )
+      } else {
+        // Show specific error message from backend with appropriate styling
+        if (result.message && result.message.includes('Mollie API')) {
+          // This is a Mollie API error - show with a different style and more details
+          toast.error(
+            <div>
+              <strong>{t('finance.invoices.mollie_api_error')}:</strong>
+              <p>{result.message}</p>
+              <p>{t('finance.invoices.check_api_key_settings')}</p>
+            </div>,
+            { autoClose: 10000 } // Keep it visible longer
+          )
+        } else {
+          // Regular error
+          toast.error(result.message || t('general.error_sending_reminders'))
+        }
+      }
+    })
+    .catch((error) => {
+      // Close loading toast
+      toast.dismiss(loadingToastId)
+      
+      // Log detailed error information
+      console.error("Error sending reminders:", error)
+      
+      // Show more specific error message if available
+      const errorMessage = error.message || t('general.error_sending_reminders')
+      toast.error(errorMessage)
+    })
+  }
 
   return (
-    <Table cards>
+    <>
+      {hasOverdueInvoices && !remindersSent && (
+        <div className="mb-3">
+          <Button
+            color="warning"
+            icon="bell"
+            onClick={handleSendReminders}
+            loading={sendingReminders}
+            disabled={sendingReminders}
+          >
+            {t('finance.invoices.send_reminders')}
+          </Button>
+        </div>
+      )}
+      <Table cards>
         <Table.Header>
           <Table.Row key={v4()}>
             <Table.ColHeader>{t('general.status')}</Table.ColHeader>
@@ -137,7 +208,7 @@ function FinanceInvoicesList({
         ))}
       </Table.Body>
     </Table>
-  )
+  </>)
 }
 
 export default withTranslation()(withRouter(FinanceInvoicesList))

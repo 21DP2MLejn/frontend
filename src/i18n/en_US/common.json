@@ -535,7 +535,9 @@
                 "sent": "Sent"
             },
             "summary": "Summary",
-            "title": "Invoices"
+            "title": "Invoices",
+            "send_reminders": "Send Reminders",
+            "reminders_sent": "Sent {{count}} invoice reminders successfully"
         },
         "orders": {
             "customer_message": "Customer message",
@@ -859,6 +861,7 @@
         "enroll": "Enroll",
         "enrollments": "Enrollments",
         "error_sad_smiley": "Error :(",
+        "error_sending_reminders": "Error sending invoice reminders",
         "error_try_refreshing": "Error: please refresh the page and try again.",
         "event": "Event",
         "event_tickets": "Event tickets",

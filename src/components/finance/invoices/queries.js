@@ -292,3 +292,15 @@ export const DELETE_INVOICE_PAYMENT = gql`
     }
   }
 `
+
+export const SEND_INVOICE_REMINDERS = gql`
+  mutation SendInvoiceReminders {
+    sendInvoiceReminders {
+      result {
+        count
+        success
+        message
+      }
+    }
+  }
+`
