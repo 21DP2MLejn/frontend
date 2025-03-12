@@ -16,7 +16,7 @@ import {
 import AppSettingsContext from '../../context/AppSettingsContext'
 import { get_list_query_variables } from "./tools"
 import FinanceInvoicesStatus from "../../ui/FinanceInvoiceStatus"
-import { GET_INVOICES_QUERY, DELETE_FINANCE_INVOICE, SEND_INVOICE_REMINDERS } from "./queries"
+import { GET_INVOICES_QUERY, DELETE_FINANCE_INVOICE, SEND_INVOICE_REMINDERS, SEND_INVOICE_REMINDER } from "./queries"
 import { TOKEN_REFRESH } from "../../../queries/system/auth"
 import { refreshTokenAndOpenExportLinkInNewTab } from "../../../tools/refresh_token_and_open_export_link"
 import confirm_delete from "../../../tools/confirm_delete"
@@ -36,7 +36,10 @@ function FinanceInvoicesList({
   const [doTokenRefresh] = useMutation(TOKEN_REFRESH)
   const [deleteFinanceInvoice] = useMutation(DELETE_FINANCE_INVOICE)
   const [sendInvoiceReminders, { loading: sendingReminders }] = useMutation(SEND_INVOICE_REMINDERS)
+  const [sendInvoiceReminder] = useMutation(SEND_INVOICE_REMINDER)
   const [remindersSent, setRemindersSent] = useState(false)
+  const [reminderSendingInvoiceIds, setReminderSendingInvoiceIds] = useState([])
+  const [reminderSentInvoiceIds, setReminderSentInvoiceIds] = useState([])
 
   // Check if there are any overdue invoices
   const hasOverdueInvoices = invoices.edges.some(({ node }) => 
@@ -88,6 +91,58 @@ function FinanceInvoicesList({
       
       // Show more specific error message if available
       const errorMessage = error.message || t('general.error_sending_reminders')
+      toast.error(errorMessage)
+    })
+  }
+
+  // Function to send a reminder for a specific invoice
+  const handleSendReminderForInvoice = (invoiceId) => {
+    // Add this invoice to the list of invoices that are currently sending reminders
+    setReminderSendingInvoiceIds(prev => [...prev, invoiceId])
+    
+    // Send reminder for this specific invoice
+    sendInvoiceReminder({
+      variables: {
+        id: invoiceId,
+        attachPDF: false // Don't attach PDF to the email, use link instead
+      }
+    })
+    .then(({ data }) => {
+      // Remove this invoice from the sending list
+      setReminderSendingInvoiceIds(prev => prev.filter(id => id !== invoiceId))
+      
+      const result = data.sendInvoiceReminder.result;
+      if (result.success) {
+        // Add this invoice to the list of invoices that have been sent reminders
+        setReminderSentInvoiceIds(prev => [...prev, invoiceId])
+        toast.success(t('finance.invoices.reminder_sent'))
+      } else {
+        // Show specific error message from backend with appropriate styling
+        if (result.message && result.message.includes('Mollie API')) {
+          // This is a Mollie API error - show with a different style and more details
+          toast.error(
+            <div>
+              <strong>{t('finance.invoices.mollie_api_error')}:</strong>
+              <p>{result.message}</p>
+              <p>{t('finance.invoices.check_api_key_settings')}</p>
+            </div>,
+            { autoClose: 10000 } // Keep it visible longer
+          )
+        } else {
+          // Regular error
+          toast.error(result.message || t('general.error_sending_reminder'))
+        }
+      }
+    })
+    .catch((error) => {
+      // Remove this invoice from the sending list
+      setReminderSendingInvoiceIds(prev => prev.filter(id => id !== invoiceId))
+      
+      // Log detailed error information
+      console.error("Error sending reminder:", error)
+      
+      // Show more specific error message if available
+      const errorMessage = error.message || t('general.error_sending_reminder')
       toast.error(errorMessage)
     })
   }
@@ -162,6 +217,21 @@ function FinanceInvoicesList({
                 {node.balanceDisplay}
               </Table.Col>
               <Table.Col className="text-right" key={v4()}>
+                {/* Add individual reminder button for overdue invoices */}
+                {node.status === "OVERDUE" && 
+                  !reminderSentInvoiceIds.includes(node.id) && (
+                  <Button
+                    color="warning"
+                    icon="bell"
+                    className="mr-2"
+                    size="sm"
+                    onClick={() => handleSendReminderForInvoice(node.id)}
+                    loading={reminderSendingInvoiceIds.includes(node.id)}
+                    disabled={reminderSendingInvoiceIds.includes(node.id)}
+                  >
+                    {t('finance.invoices.send_reminder')}
+                  </Button>
+                )}
                 {(showBtnPDF) && <Button
                   color="secondary"
                   icon="printer"

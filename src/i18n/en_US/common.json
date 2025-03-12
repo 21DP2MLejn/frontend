@@ -537,7 +537,11 @@
             "summary": "Summary",
             "title": "Invoices",
             "send_reminders": "Send Reminders",
-            "reminders_sent": "Sent {{count}} invoice reminders successfully"
+            "send_reminder": "Send Reminder",
+            "reminder_sent": "Reminder sent successfully",
+            "reminders_sent": "Sent {{count}} invoice reminders successfully",
+            "check_api_key_settings": "Please check your Mollie API key settings",
+            "mollie_api_error": "Mollie API Error"
         },
         "orders": {
             "customer_message": "Customer message",

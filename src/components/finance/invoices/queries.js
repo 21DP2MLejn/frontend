@@ -304,3 +304,16 @@ export const SEND_INVOICE_REMINDERS = gql`
     }
   }
 `
+
+export const SEND_INVOICE_REMINDER = gql`
+  mutation SendInvoiceReminder($id: ID!, $attachPDF: Boolean) {
+    sendInvoiceReminder(id: $id, attachPDF: $attachPDF) {
+      result {
+        count
+        success
+        message
+        invoiceId
+      }
+    }
+  }
+`
