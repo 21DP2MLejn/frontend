@@ -65,7 +65,7 @@ function FinanceInvoicesList({
           )
         )
       } else {
-        // Show specific error message from backend with appropriate styling
+        // Show specific error message from backend
         if (result.message && result.message.includes('Mollie API')) {
           // This is a Mollie API error - show with a different style and more details
           toast.error(
@@ -149,7 +149,8 @@ function FinanceInvoicesList({
 
   return (
     <>
-      {hasOverdueInvoices && !remindersSent && (
+      {/* Bulk reminder button temporarily disabled
+       {hasOverdueInvoices && !remindersSent && (
         <div className="mb-3">
           <Button
             color="warning"
@@ -162,6 +163,7 @@ function FinanceInvoicesList({
           </Button>
         </div>
       )}
+      */}
       <Table cards>
         <Table.Header>
           <Table.Row key={v4()}>
