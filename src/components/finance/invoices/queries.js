@@ -42,10 +42,12 @@ export const GET_INVOICES_QUERY = gql`
           relationContactName
           dateSent
           dateDue
+          dateLastReminder
           total
           totalDisplay
           balance
           balanceDisplay
+          isReminderEligible
         }
       }
     }

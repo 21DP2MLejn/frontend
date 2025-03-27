@@ -28,7 +28,7 @@ function FinanceInvoices({ t, location, history }) {
 
 
   if (loading) return (
-    <FinanceInvoicesBase refetch={refetch}>
+    <FinanceInvoicesBase refetch={refetch} invoices={null}>
       <ContentCard cardTitle={t('finance.invoices.title')}>
         <Dimmer active={true}
                 loader={true}>
@@ -38,7 +38,7 @@ function FinanceInvoices({ t, location, history }) {
   )
   // Error
   if (error) return (
-    <FinanceInvoicesBase refetch={refetch}>
+    <FinanceInvoicesBase refetch={refetch} invoices={null}>
       <ContentCard cardTitle={t('finance.invoices.title')}>
         <p>{t('finance.invoices.error_loading')}</p>
       </ContentCard>
@@ -49,7 +49,7 @@ function FinanceInvoices({ t, location, history }) {
 
   // Empty list
   if (!invoices.edges.length) { return (
-    <FinanceInvoicesBase refetch={refetch}>
+    <FinanceInvoicesBase refetch={refetch} invoices={invoices}>
       <ContentCard cardTitle={t('finance.invoices.title')}>
         <p>
           {t('finance.invoices.empty_list')}
@@ -59,7 +59,7 @@ function FinanceInvoices({ t, location, history }) {
   )}
 
   return (
-    <FinanceInvoicesBase refetch={refetch}>
+    <FinanceInvoicesBase refetch={refetch} invoices={invoices}>
       <ContentCard 
         cardTitle={t('finance.invoices.title')}
         hasCardBody={false}
